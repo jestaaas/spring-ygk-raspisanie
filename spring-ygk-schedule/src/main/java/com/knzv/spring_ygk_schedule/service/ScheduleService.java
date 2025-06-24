@@ -27,8 +27,7 @@ public class ScheduleService {
             return "Выберите группу";
         }
 
-        StringBuilder header = new StringBuilder();
-        StringBuilder result = new StringBuilder();
+        StringBuilder finalOutput = new StringBuilder(); // Используем новую StringBuilder для конечного вывода
 
         String currentDay = getCurrentWeekService.getCurrentDay();
 
@@ -37,36 +36,34 @@ public class ScheduleService {
         String groupName = userRepository.findByUserId(userId).get().getGroup().getName();
         List<Long> weektypeIds = new ArrayList<>();
 
-        if (getCurrentWeekService.getCurrentWeek().equalsIgnoreCase( "числитель")) {
-            weektypeIds = Arrays.asList(1L, 2L);
-        }
-        else if (getCurrentWeekService.getCurrentWeek().equalsIgnoreCase("знаменатель")) {
-            weektypeIds = Arrays.asList(1L, 3L);
+        if (getCurrentWeekService.getCurrentWeek().equalsIgnoreCase("числитель")) {
+            weektypeIds = Arrays.asList(1L, 2L); // Нечетная (1) и Числитель (2)
+        } else if (getCurrentWeekService.getCurrentWeek().equalsIgnoreCase("знаменатель")) {
+            weektypeIds = Arrays.asList(1L, 3L); // Нечетная (1) и Знаменатель (3)
         }
 
         long weekDayId = weekdaysConvertor.convertDay(currentDay);
 
         List<Object[]> schedule = scheduleRepository.findScheduleByGroupIdAndWeekdayIdAndWeektypeIds(userGroup, weekDayId, weektypeIds);
 
-        header
+        // Формируем заголовок отдельно и добавляем его в finalOutput
+        finalOutput
                 .append("Расписание на ").append(currentDay.substring(0, 1).toUpperCase() + currentDay.substring(1))
                 .append(" (")
                 .append(getCurrentWeekService.getCurrentWeek())
                 .append(")\n\n");
-        result.append(header);
 
         Map<Integer, String> changedPairs = updateScheduleHandler.getChanges(groupName);
         Map<Integer, String> pairsFromDB = new HashMap<>();
 
         for (Object[] row : schedule) {
-            result
-                        .append(row[1])
-                        .append(" ").append(row[2])
-                        .append(" (").append(row[3]).append(")")
-                        .append("\n");
+            StringBuilder pairString = new StringBuilder(); // Временный StringBuilder для каждой пары
+            pairString
+                    .append(row[1]) // Subject
+                    .append(" ").append(row[2]) // Teacher
+                    .append(" (").append(row[3]).append(")"); // Room
 
-            pairsFromDB.put(Integer.parseInt(row[0].toString()), result.toString());
-            result = new StringBuilder();
+            pairsFromDB.put(Integer.parseInt(row[0].toString()), pairString.toString()); // Pair Number as key
         }
 
         Map<Integer, String> sortedFinalSchedule = new TreeMap<>(pairsFromDB);
@@ -77,15 +74,19 @@ public class ScheduleService {
             int intValue = entry.getKey();
             String emojiNumber = convertToEmojiNumber(intValue);
 
-            result.append(emojiNumber).append(" - ")
-                    .append(entry.getValue());
+            finalOutput.append(emojiNumber).append(" - ")
+                    .append(entry.getValue()).append("\n"); // Добавляем "\n" здесь
         }
 
-        return result.toString();
+        return finalOutput.toString();
     }
+
     public String getFullSchedule(Update update, String weekTypeName) {
         Long userId = update.getMessage().getChat().getId();
-        String groupName = userRepository.findByUserId(userId).get().getGroup().getName();
+        // Используем Optional для более безопасного доступа к User и Group
+        String groupName = userRepository.findByUserId(userId)
+                .map(user -> user.getGroup().getName())
+                .orElse("Неизвестная группа"); // или выбросить исключение, если группа обязательна
 
         List<Object[]> schedule = scheduleRepository.findScheduleByGroupNameAndWeektypeName(groupName, weekTypeName);
         StringBuilder result = new StringBuilder();
@@ -112,13 +113,13 @@ public class ScheduleService {
         if (number == 0) {
             emojiString.append(emojiNumbers[0]);
         } else {
-            while (number > 0) {
-                int digit = number % 10;
-                emojiString.insert(0, emojiNumbers[digit]);
-                number /= 10;
+            // Преобразуем число в строку, чтобы итерировать по его цифрам в правильном порядке
+            String numStr = String.valueOf(number);
+            for (char c : numStr.toCharArray()) {
+                // Преобразуем символ цифры в int и используем его как индекс для массива emojiNumbers
+                emojiString.append(emojiNumbers[Character.getNumericValue(c)]);
             }
         }
-
         return emojiString.toString();
     }
 }

@@ -5,21 +5,14 @@ import org.springframework.stereotype.Service;
 @Service
 public class WeekdaysConvertor {
     public long convertDay(String day) {
-        switch (day) {
-            case "понедельник":
-                return 1;
-            case "вторник":
-                return 2;
-            case "среда":
-                return 3;
-            case "четверг":
-                return 4;
-            case "пятница":
-                return 5;
-            case "суббота":
-                return 6;
-            default:
-                return 0;
-        }
+        return switch (day) {
+            case "понедельник" -> 1;
+            case "вторник" -> 2;
+            case "среда" -> 3;
+            case "четверг" -> 4;
+            case "пятница" -> 5;
+            case "суббота" -> 6;
+            default -> 0;
+        };
     }
 }

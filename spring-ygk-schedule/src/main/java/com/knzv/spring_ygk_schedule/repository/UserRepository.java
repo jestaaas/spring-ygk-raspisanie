@@ -2,9 +2,11 @@ package com.knzv.spring_ygk_schedule.repository;
 
 import com.knzv.spring_ygk_schedule.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,4 +18,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<Long> findAllFieldNamesExcept(@Param("excludedValue") Long excludedValue);
     @Override
     long count();
+    @Modifying
+    @Transactional // Важно для операций изменения данных
+    @Query("DELETE FROM User u WHERE u.userId = :userId")
+    void deleteByUserId(@Param("userId") long userId);
+
 }

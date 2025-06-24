@@ -53,7 +53,7 @@ public class CurrentWeekService {
         Matcher matcher = pattern.matcher(string);
 
         if (matcher.find()) {
-            result = matcher.group(1);
+            result = matcher.group(1); // Получаем текст внутри скобо
         }
         return result;
     }
@@ -62,7 +62,7 @@ public class CurrentWeekService {
         int index = string.indexOf("/");
 
         if (index != -1) {
-            return string.substring(index + 1).trim();
+            return string.substring(index + 1).trim(); // Используем trim(), чтобы убрать пробелы в начале
         }
         return "";
     }

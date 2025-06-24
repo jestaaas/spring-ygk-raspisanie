@@ -4,7 +4,9 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 @Service
@@ -25,49 +27,47 @@ public class ScheduleWebParserService {
                 for (var row : rows) {
 
                     if (row.select("td").get(1).text().equalsIgnoreCase(group)) {
-                        // тут был код
-                        if (row.select("td").get(2).text().contains(",")) {
-                            String[] numberArray = row.select("td").get(2).text().split(",");
+                        // Обрезаем пробелы сразу при получении текста из HTML
+                        String pairNumberText = row.select("td").get(2).text().trim();
+                        String subjectText = row.select("td").get(4).text().trim();
+                        String roomText = row.select("td").get(5).text().trim();
+
+                        if (pairNumberText.contains(",")) {
+                            String[] numberArray = pairNumberText.split(",");
                             StringBuilder result = new StringBuilder();
                             result
-                                    .append(row.select("td").get(4).text()).append(" (")
-                                    .append(row.select("td").get(5).text())
-                                    .append(") (❗замена)")
-                                    .append("\n");
+                                    .append(subjectText).append(" (")
+                                    .append(roomText)
+                                    .append(") (❗замена)"); // Убрали \n, его добавит ScheduleService
 
                             for (String pairNum : numberArray) {
-                                changedPairs.put(Integer.parseInt(pairNum), result.toString());
+                                changedPairs.put(Integer.parseInt(pairNum.trim()), result.toString()); // Обрезаем пробелы для чисел
                             }
                         }
-                        else if (row.select("td").get(2).text().contains("-")) {
-                            String[] numberArray = row.select("td").get(2).text().split("-");
-                            List<String> pairNumArray = new ArrayList<>();
-                            for (int i = Integer.parseInt(numberArray[0]); i <= Integer.parseInt(numberArray[1]); i++) {
-                                pairNumArray.add(i + "");
-                            }
-                            for (int i = Integer.parseInt(numberArray[0]); i <= Integer.parseInt(numberArray[1]); i++) {
-                                StringBuilder result = new StringBuilder();
-                                result
-                                        .append(row.select("td").get(4).text()).append(" (")
-                                        .append(row.select("td").get(5).text())
-                                        .append(") (❗замена)")
-                                        .append("\n");
+                        else if (pairNumberText.contains("-")) {
+                            String[] numberArray = pairNumberText.split("-");
+                            int start = Integer.parseInt(numberArray[0].trim()); // Обрезаем пробелы для чисел
+                            int end = Integer.parseInt(numberArray[1].trim());   // Обрезаем пробелы для чисел
 
-                                for (String pairNum : pairNumArray) {
-                                    changedPairs.put(Integer.parseInt(pairNum), result.toString());
-                                }
+                            StringBuilder result = new StringBuilder();
+                            result
+                                    .append(subjectText).append(" (")
+                                    .append(roomText)
+                                    .append(") (❗замена)"); // Убрали \n, его добавит ScheduleService
+
+                            for (int i = start; i <= end; i++) {
+                                changedPairs.put(i, result.toString());
                             }
                         }
                         else {
                             StringBuilder result = new StringBuilder();
 
                             result
-                                    .append(row.select("td").get(4).text()).append(" (")
-                                    .append(row.select("td").get(5).text())
-                                    .append(") (❗замена)")
-                                    .append("\n");
+                                    .append(subjectText).append(" (")
+                                    .append(roomText)
+                                    .append(") (❗замена)"); // Убрали \n, его добавит ScheduleService
 
-                            changedPairs.put(Integer.parseInt(row.select("td").get(2).text()), result.toString());
+                            changedPairs.put(Integer.parseInt(pairNumberText), result.toString());
                         }
 
                     }

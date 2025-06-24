@@ -132,7 +132,7 @@ public class ScheduleFileParserService {
                     pairNum = Integer.parseInt(row0);
                     System.out.println(
                             row0 + " верхняя пара только для знаменателя"
-                    );
+                    ); //миша спок, тут ничего делать не надо
                 }
 
                 else {
