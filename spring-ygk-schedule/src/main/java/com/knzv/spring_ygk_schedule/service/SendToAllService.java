@@ -17,21 +17,11 @@ import java.util.List;
 @Service
 public class SendToAllService {
     @Autowired
-    private MessageService messageService; // Используем для отправки обычных текстовых сообщений
+    private MessageService messageService;
     @Autowired
     private UserRepository userRepository;
 
-    private static final String TAG = "SendToAllService";
-
-    // Метод для обработки недоступных пользователей
-    private void handleUserUnavailable(long userId, TelegramApiException e) {
-        System.err.println("Пользователь " + userId + " недоступен: " + e.getMessage());
-        // Добавляем логику для удаления пользователя из базы данных
-        userRepository.deleteByUserId(userId);
-        System.out.println("Пользователь " + userId + " удален из базы данных.");
-    }
-
-    public void sendMessage(long chatId, String message, TelegramClient telegramClient, long adminId) {
+    public void sendToAll(String message, TelegramClient telegramClient, long adminId) {
         List<Long> userIds = userRepository.findAllFieldNamesExcept(adminId);
 
         for (Long id : userIds) {
@@ -42,12 +32,18 @@ public class SendToAllService {
             try {
                 telegramClient.execute(sendMessage);
             } catch (TelegramApiRequestException e) {
-                if (e.getErrorCode() == 403 || e.getErrorCode() == 400) {
-                    handleUserUnavailable(id, e);
+                // Обрабатываем специфические ошибки Telegram API
+                // 403 Forbidden: бот заблокирован пользователем
+                // 400 Bad Request: чат не найден или ID невалиден
+                if (e.getErrorCode() == 403) {
+                    System.err.println("Пользователь " + id + " заблокировал бота. Сообщение не отправлено. Ошибка: " + e.getMessage());
+                } else if (e.getErrorCode() == 400) {
+                    System.err.println("Ошибка при отправке сообщения пользователю " + id + ": чат не найден или ID невалиден. Ошибка: " + e.getMessage());
                 } else {
-                    System.err.println("Ошибка Telegram API при отправке сообщения пользователю " + id + ": " + e.getMessage());
+                    System.err.println("Ошибка Telegram API при отправке сообщения пользователю " + id + ": " + e.getErrorCode() + " - " + e.getMessage());
                 }
             } catch (TelegramApiException e) {
+                // Обрабатываем другие общие ошибки Telegram API
                 System.err.println("Общая ошибка Telegram API при отправке сообщения пользователю " + id + ": " + e.getMessage());
             }
         }
@@ -65,10 +61,12 @@ public class SendToAllService {
             try {
                 telegramClient.execute(photo);
             } catch (TelegramApiRequestException e) {
-                if (e.getErrorCode() == 403 || e.getErrorCode() == 400) {
-                    handleUserUnavailable(id, e);
+                if (e.getErrorCode() == 403) {
+                    System.err.println("Пользователь " + id + " заблокировал бота. Фото не отправлено. Ошибка: " + e.getMessage());
+                } else if (e.getErrorCode() == 400) {
+                    System.err.println("Ошибка при отправке фото пользователю " + id + ": чат не найден или ID невалиден. Ошибка: " + e.getMessage());
                 } else {
-                    System.err.println("Ошибка Telegram API при отправке фото пользователю " + id + ": " + e.getMessage());
+                    System.err.println("Ошибка Telegram API при отправке фото пользователю " + id + ": " + e.getErrorCode() + " - " + e.getMessage());
                 }
             } catch (TelegramApiException e) {
                 System.err.println("Общая ошибка Telegram API при отправке фото пользователю " + id + ": " + e.getMessage());
@@ -87,10 +85,12 @@ public class SendToAllService {
             try {
                 telegramClient.execute(media);
             } catch (TelegramApiRequestException e) {
-                if (e.getErrorCode() == 403 || e.getErrorCode() == 400) {
-                    handleUserUnavailable(id, e);
+                if (e.getErrorCode() == 403) {
+                    System.err.println("Пользователь " + id + " заблокировал бота. Медиагруппа не отправлена. Ошибка: " + e.getMessage());
+                } else if (e.getErrorCode() == 400) {
+                    System.err.println("Ошибка при отправке медиагруппы пользователю " + id + ": чат не найден или ID невалиден. Ошибка: " + e.getMessage());
                 } else {
-                    System.err.println("Ошибка Telegram API при отправке медиагруппы пользователю " + id + ": " + e.getMessage());
+                    System.err.println("Ошибка Telegram API при отправке медиагруппы пользователю " + id + ": " + e.getErrorCode() + " - " + e.getMessage());
                 }
             } catch (TelegramApiException e) {
                 System.err.println("Общая ошибка Telegram API при отправке медиагруппы пользователю " + id + ": " + e.getMessage());
